@@ -26,27 +26,19 @@ import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.android.samples.donuttracker.Notifier
 import com.android.samples.donuttracker.R
+import com.android.samples.donuttracker.common.EditState
 import com.android.samples.donuttracker.databinding.DonutEntryDialogBinding
 import com.android.samples.donuttracker.model.Donut
 import com.android.samples.donuttracker.storage.SnackDatabase
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 
-/**
- * This dialog allows the user to enter information about a donut, either creating a new
- * entry or updating an existing one.
- */
 class DonutEntryDialogFragment : BottomSheetDialogFragment() {
 
-    private enum class EditingState {
-        NEW_DONUT,
-        EXISTING_DONUT
-    }
-
     override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
+            inflater: LayoutInflater,
+            container: ViewGroup?,
+            savedInstanceState: Bundle?
+    ): View {
         return DonutEntryDialogBinding.inflate(inflater, container, false).root
     }
 
@@ -63,16 +55,13 @@ class DonutEntryDialogFragment : BottomSheetDialogFragment() {
         var donut: Donut? = null
         val args: DonutEntryDialogFragmentArgs by navArgs()
         val editingState =
-            if (args.itemId > 0) {
-                EditingState.EXISTING_DONUT
-            } else {
-                EditingState.NEW_DONUT
-            }
+                if (args.itemId > 0) {
+                    EditState.EXISTING
+                } else {
+                    EditState.NEW
+                }
 
-        // If we arrived here with an itemId of >= 0, then we are editing an existing item
-        if (editingState == EditingState.EXISTING_DONUT) {
-            // Request to edit an existing item, whose id was passed in as an argument.
-            // Retrieve that item and populate the UI with its details
+        if (editingState == EditState.EXISTING) {
             donutEntryViewModel.get(args.itemId).observe(viewLifecycleOwner) { donutItem ->
                 binding.apply {
                     name.setText(donutItem.name)
@@ -92,17 +81,17 @@ class DonutEntryDialogFragment : BottomSheetDialogFragment() {
             val navController = findNavController()
 
             donutEntryViewModel.addData(
-                donut?.id ?: 0,
-                binding.name.text.toString(),
-                binding.description.text.toString(),
-                binding.ratingBar.rating.toInt()
+                    donut?.id ?: 0,
+                    binding.name.text.toString(),
+                    binding.description.text.toString(),
+                    binding.ratingBar.rating.toInt()
             ) { actualId ->
                 val arg = DonutEntryDialogFragmentArgs(actualId).toBundle()
                 val pendingIntent = navController
-                    .createDeepLink()
-                    .setDestination(R.id.donutEntryDialogFragment)
-                    .setArguments(arg)
-                    .createPendingIntent()
+                        .createDeepLink()
+                        .setDestination(R.id.donutEntryDialogFragment)
+                        .setArguments(arg)
+                        .createPendingIntent()
 
                 Notifier.postNotification(actualId, context, pendingIntent)
             }

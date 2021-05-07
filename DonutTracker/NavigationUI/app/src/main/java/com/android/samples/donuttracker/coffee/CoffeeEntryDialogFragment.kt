@@ -26,6 +26,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.android.samples.donuttracker.Notifier
 import com.android.samples.donuttracker.R
+import com.android.samples.donuttracker.common.EditState
 import com.android.samples.donuttracker.databinding.CoffeeEntryDialogBinding
 import com.android.samples.donuttracker.model.Coffee
 import com.android.samples.donuttracker.storage.SnackDatabase
@@ -37,16 +38,11 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment
  */
 class CoffeeEntryDialogFragment : BottomSheetDialogFragment() {
 
-    private enum class EditingState {
-        NEW_COFFEE,
-        EXISTING_COFFEE
-    }
-
     override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
+            inflater: LayoutInflater,
+            container: ViewGroup?,
+            savedInstanceState: Bundle?
+    ): View {
         return CoffeeEntryDialogBinding.inflate(inflater, container, false).root
     }
 
@@ -63,14 +59,14 @@ class CoffeeEntryDialogFragment : BottomSheetDialogFragment() {
         var coffee: Coffee? = null
         val args: CoffeeEntryDialogFragmentArgs by navArgs()
         val editingState =
-            if (args.itemId > 0) {
-                EditingState.EXISTING_COFFEE
-            } else {
-                EditingState.NEW_COFFEE
-            }
+                if (args.itemId > 0) {
+                    EditState.EXISTING
+                } else {
+                    EditState.NEW
+                }
 
         // If we arrived here with an itemId of >= 0, then we are editing an existing item
-        if (editingState == EditingState.EXISTING_COFFEE) {
+        if (editingState == EditState.EXISTING) {
             // Request to edit an existing item, whose id was passed in as an argument.
             // Retrieve that item and populate the UI with its details
             coffeeEntryViewModel.get(args.itemId).observe(viewLifecycleOwner) { coffeeItem ->
@@ -93,17 +89,17 @@ class CoffeeEntryDialogFragment : BottomSheetDialogFragment() {
             val navController = findNavController()
 
             coffeeEntryViewModel.addData(
-                coffee?.id ?: 0,
-                binding.name.text.toString(),
-                binding.description.text.toString(),
-                binding.ratingBar.rating.toInt()
+                    coffee?.id ?: 0,
+                    binding.name.text.toString(),
+                    binding.description.text.toString(),
+                    binding.ratingBar.rating.toInt()
             ) { actualId ->
                 val arg = CoffeeEntryDialogFragmentArgs(actualId).toBundle()
                 val pendingIntent = navController
-                    .createDeepLink()
-                    .setDestination(R.id.coffeeEntryDialogFragment)
-                    .setArguments(arg)
-                    .createPendingIntent()
+                        .createDeepLink()
+                        .setDestination(R.id.coffeeEntryDialogFragment)
+                        .setArguments(arg)
+                        .createPendingIntent()
 
                 Notifier.postNotification(actualId, context, pendingIntent)
             }
